@@ -1,0 +1,361 @@
+Nome: Wellington Azevedo Bezerra
+RA: 178668
+
+Primeiro iremos utilizar o link diisponibilizado pelo professor.
+```{r}
+at2 <- read.table(url("https://www.ime.unicamp.br/~gvludwig/2018s2-me731/at2/tobacco.txt"),header = T)
+
+```
+
+Antes de iniciar a responder as questões, foi considerado verdadeiro as suposições de um modelo de regressão em relação ao erro. No caso, a independência das variáveis erro, homogeneidade das variâncias dos erros, normalidade dos erros e a relação entre as variáveis respostas e explicativas.
+
+1.1) Sabendo que nesta análise de regressão univariada da porcentagem de nicotina foi considerada como variável resposta, e as explicativas foram as percentagens de nitrogênio e potássio. 
+```{r}
+fit1 <- lm(perctNicotine ~ perctN + perctK, data=at2)
+fit1
+modelo1 <- summary(fit1)
+modelo1
+```
+
+Podemos perceber que os coeficientes explicam a variável respota em 75,16% pelo R quadrado ajustado (coeficiente de determinação ajustado).
+Sabendo que o coeficiente do intercepto e os angulares são repsctivamente 1.158, -0.374 e 0.203,  então pelo uso da anova os coeficiente são significativos, caso utilizássemos um nivel de significância abaixo de 5%.
+Além disso, podemos notar o comportamento do resíduo se é normal para verificarmos se é favorável a hipótese de ser multivariado.
+
+```{r}
+par(mfrow=c(1,2))
+plot(fit1$fitted.values,fit1$residuals)
+abline(0,0,col = "red")
+xfit1 <- seq(min(fit1$residuals), max(fit1$residuals), length = 40) 
+yfit1 <- dnorm(xfit1, mean = mean(fit1$residuals), sd = sd(fit1$residuals)) 
+yfit1 <- yfit1 * diff(hist(fit1$residuals)$mids[1:2]) * length(fit1$residuals) 
+ 
+lines(xfit1, yfit1, col = "red", lwd = 2)
+```
+
+Podemos perceber pelos gráficos uma possível normalidade dos dados, mas para saber se "possível normalidade" é verdadeira, iremos utilizar o teste Shapiro - Wilk para verificar se existe normalidade.
+
+```{r}
+shapiro.test(fit1$residuals)
+```
+
+Logo, teremos normalidade no resíduo, pois o p-valor não é significativo.
+
+
+1.2) Podemos observar abaixo a análise da variável resposta (taxa de queima de cigarros).
+
+```{r}
+fit2 <- lm(burnRate ~ perctChlorine + perctK + perctP, at2)
+fit2
+modelo2 <- summary(fit2)
+modelo2
+```
+
+E podemos verificar o comportamentos do resíduo do modelo e o teste Shapiro - Wilk para verificar normalidade.
+
+```{r}
+par(mfrow=c(1,2))
+plot(fit2$fitted.values,fit2$residuals)
+abline(0,0,col = "red")
+xfit2 <- seq(min(fit2$residuals), max(fit2$residuals), length = 40) 
+yfit2 <- dnorm(xfit2, mean = mean(fit2$residuals), sd = sd(fit2$residuals)) 
+yfit2 <- yfit2 * diff(hist(fit2$residuals)$mids[1:2]) * length(fit2$residuals) 
+ 
+lines(xfit2, yfit2, col = "red", lwd = 2)
+
+shapiro.test(fit2$residuals)
+```
+Podemos observar que existe normalidade no resíduo, pois o teste não obteve significância.
+É notado com o modelo produzido que os coeficientes angulares não possuem significância, além do R quadrado ajustado sendo negativo. Contudo, se restirarmos a variável explicativa perctK (potássio), verificaremos uma diferença importante nos coeficientes. 
+
+```{r}
+fit3 <- lm(burnRate ~ perctChlorine + perctP, at2)
+fit3
+modelo3 <- summary(fit3)
+modelo3
+```
+
+Podemos notar que ao retirar a variável perctK, o perctP (fósforo) se torna positivo. Logo, podemos perceber que as variáveis possuem dependência entre elas.
+
+
+1.3) Agora iremos analisar a porcentagem de açucar como variável resposta, com o uso de quatro variáveis explicativas.
+
+```{r}
+fit4 <- lm(perctSugar ~ perctN + perctChlorine + perctCa + perctMg,at2)
+modelo4  <- summary(fit4)
+```
+
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(fit4$fitted.values,fit4$residuals)
+abline(0,0,col = "red")
+xfit4 <- seq(min(fit4$residuals), max(fit4$residuals), length = 40) 
+yfit4 <- dnorm(xfit4, mean = mean(fit4$residuals), sd = sd(fit4$residuals)) 
+yfit4 <- yfit4 * diff(hist(fit4$residuals)$mids[1:2]) * length(fit4$residuals) 
+ 
+lines(xfit4, yfit4, col = "red", lwd = 2)
+
+shapiro.test(fit4$residuals)
+```
+
+
+Podemos notar que existe normalidade no resíduo, mesmo sendo um p-valor próximo de ser significativo.
+
+Removendo os coeficientes perctCa e perctMg, podemos notar as seguintes mudanças nos coeficientes no perctN e perctChlorine.
+
+```{r}
+fit5 <- lm(perctSugar ~ perctN + perctChlorine,at2)
+modelo5  <- summary(fit5)
+```
+
+Observamos que o coeficiente do nitrogêneo irá negativar com um valor semelhante quando era positivo e o cloro irá continuar negativo com um valor próximo ao modelo anterior sem a mudança. 
+Além disso, podemos notar que o modelo se torna com um menor valor R quadrado ajustado, uma vez que o modelo era significativo nas variáveis que foram retiradas neste (menor que 5% o Pr(>|t|)).
+Lembrando que o R quadrado ajustado negativo significa que o modelo não está explicando o comportamento análisado, pois possivelmente pode existir multicolinearidade nos efeitos internos e/ou externos que não foram informados na base de dados. 
+
+
+2.4) Para realizar o modelo de regressão multivariado completo, utilizaremos o seguinte.
+
+```{r}
+summary(lm(cbind(at2$burnRate,at2$perctSugar,at2$perctNicotine) ~ perctN + perctChlorine + perctK + perctP + perctCa + perctMg,at2))
+```
+No burnRate pode ser observado um R quadrado ajustado negativo, ou seja, o modelo gerado não relaciona na explicação do comportamento. 
+No caso do perctSugar podemos verificar um R quadrado ajustado 0,7242. Logo, o modelo é bem explicativo no comportamento do gráfico.
+por fim, o perctNicotine possui uma boa explicação do comportament, por meio do modelo dele.
+
+
+Considerando que a análise está se baseando por meio das relações entre eles. Como pode ser visto abaixo:
+
+```{r}
+pairs(at2)
+```
+
+Também podemos verificar por meio de uma MANOVA para o caso da anova multivariada.
+
+```{r}
+m <- as.matrix(at2[,c("perctN", "perctChlorine", "perctK", "perctP", "perctCa", "perctMg")])
+vetorresp <- cbind(at2$burnRate,at2$perctSugar,at2$perctNicotine)
+summary(manova(m ~ vetorresp))
+summary.aov(manova(vetorresp ~ m))
+manovanormal <- summary.manova(manova(vetorresp ~ m))
+```
+
+Podendo ser verificado que as três variáveis resposta possuem significância em relação as variáveis explicativas.
+
+Sabemos que verificando se os resíduos não são normais no univarido, então descartaremos a hipoótese que é uma normal multivariada.
+
+Para a análise de resíduo, iremos verificar cada variável resposta que foi desenvolvida pelos modelos. 
+
+```{r}
+#install.packages("royston")
+library(royston)
+
+royston.test(vetorresp)
+
+```
+
+Podemos verificar pelo royston teste para normalidade, que os o vetor resposta possue evidência de normalidade multivariada. Uma vez que o p valor do teste não é significante.
+
+Para simplificar os dados da manova gerada, é necessário utilizar diversos métodos que ajustam no caso multivariado. 
+```{r}
+
+manovanormal2 <- manova(cbind(burnRate,perctSugar,perctNicotine) ~ perctN + perctChlorine + perctK + perctP + perctCa + perctMg,at2)
+
+#install.packages("MASS")
+library(MASS)
+
+#Criando um modelo ajustado pelo stepAIC, teremos:
+ajustandomodelo <- stepAIC(manovanormal2, direction = "forward")
+#Pela anova do ajuste, obtemos resultados importantes, como os grus de liberdade e o resultado que irá  gerar do AIC para todas as variáveis explicativas. 
+ajustandomodelo$anova
+
+#Podemos verificar o o comportamento de cada variável do modelo com os seu resíduos e AIC como exemplo.
+summary(ajustandomodelo$coefficients)
+
+#Podemos verificar que o meu modelo irá diminuir mais op valor do vetor resposta.
+summary(ajustandomodelo)
+
+```
+Além disso, podemos retirar do modelo perctP, perctCa e perctMg para tornar o modelo com melhor ajuste também.
+
+
+Podemos verificar abaixo a covariância dos dados sendo explicada pelas covariáveis. Com base em 1- (|E|/|E + H|).
+```{r}
+#Descobrindo o E e o H, teremos o quanto que a covariância está sendo explicada pelas covariáveis (no caso, quase 100%).
+1- (det(as.matrix(t(at2[,1:3]) %*% as.matrix(at2[,1:3])) - t(manovanormal2$coefficients[2:7,]) %*% t(at2[,4:9]) %*% as.matrix(at2[,1:3]))/(det(as.matrix(as.matrix(t(at2[,1:3]) %*% as.matrix(at2[,1:3])) - t(manovanormal2$coefficients[2:7,]) %*% t(as.matrix(at2[,4:9])) %*% as.matrix(at2[,1:3]) + (t(manovanormal2$coefficients[2:7,]) %*% t(as.matrix(at2[,4:9])) %*% as.matrix(at2[,1:3]) - data.frame("a"= 1:3, "b" = (25*cbind(mean(at2[,1]),mean(at2[,2]), mean(at2[,3]))))[,2:4])))))
+                                                                                 
+```
+Podemos observar que a covariância dos dados é explicada pelas covariáveis em aproximadamente 95%. 
+
+
+Os valores preditos são obtidos da seguinte maneira:
+
+```{r}
+ypreditos <- as.matrix(at2[,4:9]) %*% solve(t(as.matrix(at2[,4:9])) %*% as.matrix(at2[,4:9])) %*% t(as.matrix(at2[,4:9])) %*% as.matrix(at2[,1:3])
+
+#Logo teremos está predição que é em comparação as variáveis resposta:
+
+at2[,1:3] - ypreditos
+```
+
+A comparação entre Y predito e as varíáveis resposta são muito próxima, como pode ser observado.
+
+
+
+2.5) Antes de descobrir as estimações, é necessário realizar alguns procedimentos.
+
+```{r}
+#Primeiro descobrindo o sigma maiúsculo.
+sigmamaiusculo <- cov(at2)
+
+#Abaixo, podemos notar o mi no caso multivariado.
+mimultix <- data.frame(mean(at2$perctN),mean(at2$perctChlorine),mean(at2$perctK),mean(at2$perctP),mean(at2$perctCa),mean(at2$perctMg))
+mimulty <- data.frame(mean(at2$burnRate),mean(at2$perctSugar),mean(at2$perctNicotine))
+
+#Podemos descobrir os valor dos sigmas maiúsculos divididos por blocos.
+sigmamaiusculoxx <- cov(at2[4:9],at2[4:9])
+#E também podemos fazer deste jeito.
+sigmamaiusculoyy <- sigmamaiusculo[1:3,1:3]
+sigmamaiusculoxy <- sigmamaiusculo[4:9,1:3]
+sigmamaiusculoyx <- sigmamaiusculo[1:3,4:9]
+
+#Verificamos a primeira parte da normal (parâmetro da media).
+ydamediaxmenosmi <- t(cbind(at2[,1]-(data.frame("a"= 1:25, "b" = mimultix[1]))[,2], at2[,2]-(data.frame("a"= 1:25, "b" = mimultix[2]))[,2], at2[,3]-(data.frame("a"= 1:25, "b" = mimultix[3]))[,2], at2[,4]-(data.frame("a"= 1:25, "b" = mimultix[4]))[,2], at2[,5]-(data.frame("a"= 1:25, "b" = mimultix[5]))[,2], at2[,6]-(data.frame("a"= 1:25, "b" = mimultix[6]))[,2]))
+
+basesegundadomi <- sigmamaiusculoyx %*% solve(sigmamaiusculoxx) %*% ydamediaxmenosmi
+
+basesegundadomi <- t(basesegundadomi)
+
+#Poderiamos verificar a parte do parâmetro da variância da normal, como abaixo.
+partedavar <- sigmamaiusculoyy - (sigmamaiusculoyx %*% solve(sigmamaiusculoxx) %*% sigmamaiusculoxy)
+
+#Para descobrir o mi da normal multivariada, teremos:
+ydomi <- (cbind(basesegundadomi[,1]+(data.frame("a"= 1:25, "b" = mimulty[1]))[,2], basesegundadomi[,2]+(data.frame("a"= 1:25, "b" = mimulty[2]))[,2], basesegundadomi[,3]+(data.frame("a"= 1:25, "b" = mimulty[3]))[,2]))
+
+
+```
+
+Agora iremos verificar a relação do y estimado da matriz disponibilizado pelo professor, com o y que foi encontrado por meio da normal multivariada. Por meio principalmente do scatterplot matricial que nos mostra nomalidade dos comparativos dos dados.
+```{r}
+#install.packages("car")
+library(car)
+
+plot(ydomi - at2[,1:3])
+
+scatterplotMatrix(ydomi - at2[,1:3])
+```
+
+
+
+Parte 2)
+
+Realizando a simulação, teremos a seguinte lista de procedimentos::
+Estimar o erro e o poder do teste beta de theta;
+Os três testes, sendo que são gerados 500 vezes para que tenhamos uma proporção de vezes que é rejeitado a hipótese nula (esperado 5%). 
+
+```{r error=TRUE}
+
+nulo <- c(0,0,0)
+primeiroi = NULL
+countP = 0
+countW = 0
+countH = 0
+countR = 0
+auxP = 0
+auxW = 0
+auxH = 0
+auxR = 0
+
+#install.packages("MASS")
+library(MASS)
+
+for(repetir in 1:500){
+
+  tudojunto = NULL
+  primeiroi = NULL
+  manovanormal3 = NULL
+  
+for(obs in 1:25){
+    mediaestimada <- NULL
+    mediaestimada <- mvrnorm(1,t(nulo),manovanormal2$SS$Residuals)
+    primeiroi <- cbind(mediaestimada, primeiroi)
+
+
+primeiroi <- t(primeiroi)
+
+tudojunto <- cbind(primeiroi, at2[,4:9])
+
+#Agora podemos verificar o melhor modelo por meio do procedimento solicitado pelo professor.
+
+manovanormal3 <- manova(primeiroi ~ perctN + perctChlorine + perctK + perctP + perctCa + perctMg,at2)
+
+} 
+  
+  for(paracontrap in 1:6){
+    
+testeP[[paracontrap]] <- summary(manovanormal3, test = "Pillai")
+  if(testeP$stats[1:6,"Pr(>F)"][paracontrap] < 0.05){
+    countP <- 1
+    auxP <- auxP + countP
+    
+  }
+testeW[[paracontrap]] <- summary(manovanormal3, test = "Wilks")
+  if(testeW$stats[1:6,"Pr(>F)"][paracontrap] < 0.05){
+    
+    countW <- 1
+    auxW <- auxW + countW
+  }
+
+testeH[[paracontrap]] <- summary(manovanormal3, test = "Hotelling-Lawley")
+  if(testeW$stats[1:6,"Pr(>F)"][paracontrap] < 0.05){
+    
+    countH <- 1
+    auxH <- auxH + countH
+  }
+
+testeR[[paracontrap]] <- summary(manovanormal3, test = "Roy")
+  if(testeW$stats[1:6,"Pr(>F)"][paracontrap] < 0.05){
+    
+    countR <- 1
+    auxR <- auxR + countR
+  }
+
+  }
+}
+
+proporcaoP <- auxP/(25*500)
+proporcaoW <- auxW/(25*500)
+proporcaoH <- auxH/(25*500)
+proporcaoR <- auxR/(25*500)
+
+proporcaoP
+proporcaoW
+proporcaoH
+proporcaoR
+```
+
+Podemos estimar os erros da seguinte forma:
+
+```{r}
+(t(manovanormal2$residuals) %*% manovanormal2$residuals)/manovanormal2$df.residual
+```
+
+Podemos notar que são muito pequenos os erros nos resíduos, se for comparado com a matriz de resíduos desta manova.
+É notado, caso tenha funcionado, que iriamos verificar o comportamentos das elípses geradas.
+
+Abaixo, podemos observar uma análise de resíduos com a utilização do qqplot.
+```{r error=TRUE}
+mqqnorm(cbind(proporcaoP[[]], proporcaoW[[]], proporcaoH[[]], proporcaoR[[]]), main = "Multi-normal Q-Q Plot")
+```
+
+
+
+Foi percebido que existe um beta diferente para cada cenário, sendo que existem 10 casos possíveis. Com base nisso, é contruído amostras aleatórias usando os próprios betas e aplicando os testes.
+
+Além disso, podemos dividir em dois casos para essa segunda parte da atividade. Aprimeira é gerar a mvrnorm (como foi feito), depois colocar em uma manova. No segundo caso, poderiamos realizar uma equação para descobrir o balor da variavel resposta. 
+
+Percebemos que durante a parte final, ocorreu problemas para gerar a proporção de cada caso. Contudo, podemos dizer que  de acordo com a distribuição normal, a proporção entre os testes serão próximas, ou seja, não existe um método melhor do que todos, mas em casos específicos alguns são melhores do que outros.
+
+Observação 1: Não foi utilizado a inversa da E vezes H, pois não foi notado problemas no autovalor.
+
+Observação 2: Lembrando que estamos trabalhando como significando, o caso do p-valo9r ser menor que 5%, e um modelo bem explicativo acima de 80% no R quadrado ajustado. 
